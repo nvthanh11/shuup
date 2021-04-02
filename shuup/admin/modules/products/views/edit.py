@@ -215,6 +215,15 @@ class ProductEditView(SaveFormPartsMixin, FormPartsViewMixin, CreateOrUpdateView
 
     def get_context_data(self, **kwargs):
         context = super(ProductEditView, self).get_context_data(**kwargs)
+        context['validation_issues'] = []
+        from shuup.admin.modules.products.signals import get_product_validation_issues
+        for receiver, response in get_product_validation_issues.send(
+            sender=ShopProduct, shop_product=self.get_object(), shop=self.request.shop,
+            user=self.request.user, supplier=get_supplier(self.request)
+        ):
+            for issue in response:
+                context['validation_issues'].append(issue)
+
         orderability_errors = []
 
         if self.object.pk:
